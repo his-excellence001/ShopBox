@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owner Dashboard - ShopKeeper</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header>
+            <h1>📊 Owner Dashboard</h1>
+            <a href="index.html" class="btn btn-outline" style="text-decoration: none; font-size: 0.9rem;">← Back to Shop</a>
+        </header>
+
+        <!-- Business Health -->
+        <div class="health-card">
+            <div class="health-header">
+                <span>Business Health Score</span>
+                <span class="score">87% <span class="tag tag-good">Good</span></span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 87%;"></div>
+            </div>
+            <div class="health-details">
+                <span>📈 Cash flow: Stable</span>
+                <span>⚠️ Stock risk: Low</span>
+                <span>✅ Profit trend: Rising</span>
+            </div>
+        </div>
+
+        <!-- Cash Flow Forecast -->
+        <h2 class="section-title">💰 Cash Flow Forecast</h2>
+        <div class="grid-3">
+            <div class="summary-card"><span class="label">Current</span><div class="value">$1,240</div></div>
+            <div class="summary-card"><span class="label">In 7 Days</span><div class="value green">$1,780</div></div>
+            <div class="summary-card"><span class="label">In 30 Days</span><div class="value green">$4,920</div></div>
+        </div>
+
+        <!-- AI Advice Panel -->
+        <h2 class="section-title">🧠 AI Advice (Today)</h2>
+        <div class="advice-list">
+            <div class="advice-item">
+                <div class="advice-icon impact-high">🚀</div>
+                <div><strong>Increase Rice stock</strong> <span class="tag impact-high">High Impact</span><br><small>Sales increased 28% this week. Restock 50 units.</small></div>
+            </div>
+            <div class="advice-item">
+                <div class="advice-icon impact-medium">💰</div>
+                <div><strong>Reduce Sugar order</strong> <span class="tag impact-medium">Save Cash</span><br><small>Current stock can last 19 days. Delay order.</small></div>
+            </div>
+            <div class="advice-item">
+                <div class="advice-icon impact-high">📦</div>
+                <div><strong>Move Drinks near entrance</strong> <span class="tag impact-high">+12% Sales</span><br><small>Evening customers buy them most. Relocate.</small></div>
+            </div>
+        </div>
+
+        <!-- Budget Recommendation -->
+        <h2 class="section-title">📋 Recommended Weekly Budget</h2>
+        <div class="budget-card">
+            <div class="budget-item"><span>Stock purchase</span><span>$420</span></div>
+            <div class="budget-item"><span>Rent</span><span>$80</span></div>
+            <div class="budget-item"><span>Transport</span><span>$35</span></div>
+            <div class="budget-item"><span>Utilities</span><span>$25</span></div>
+            <div class="budget-item"><span>Emergency reserve</span><span>$40</span></div>
+            <div class="budget-item total"><span>Total</span><span>$660</span></div>
+            <div class="safe-limit">✅ Safe spending limit: <strong>$700</strong> (You are safe)</div>
+        </div>
+
+        <!-- Daily Action Feed -->
+        <h2 class="section-title">📅 Morning Action Feed</h2>
+        <div class="feed-list">
+            <div class="feed-item">📦 <strong>Restock Rice</strong> <span class="tag urgent">Do today</span> <br><small>Expected profit: +$32</small></div>
+            <div class="feed-item">💰 <strong>Do not withdraw > $60</strong> <span class="tag urgent">Important</span><br><small>Cash flow is tight this week.</small></div>
+            <div class="feed-item">📊 <strong>Promote Drinks after 5 PM</strong> <br><small>Customers buy more in the evening.</small></div>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

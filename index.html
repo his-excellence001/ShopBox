@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopBox - Inventory Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <h1>
+            <img src="logo.png" alt="ShopBox" style="height: 32px; vertical-align: middle; margin-right: 8px;">
+            ShopBox
+        </h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="userLabel" style="font-size: 0.8rem; color: #7f8c8d; font-weight: bold;"></span>
+            <span style="font-size: 0.8rem; color: #7f8c8d;">v1.0</span>
+            <button onclick="handleLogout()" class="btn btn-outline" style="padding: 4px 12px; font-size: 0.75rem;">Logout</button>
+        </div>
+    </header>
+
+    <!-- SUMMARY CARDS -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="label">Sales (Today)</div>
+            <div class="value" id="salesCount">0</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Profit (Today)</div>
+            <div class="value green" id="profitToday">$0.00</div>
+        </div>
+        <div class="summary-card">
+            <div class="label">Low Stock</div>
+            <div class="value orange" id="lowStockCount">0</div>
+        </div>
+    </div>
+
+    <!-- SEARCH -->
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="🔍 Search products..." class="search-input">
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <!-- OWNER ONLY BUTTONS -->
+        <button id="lockBtn" class="btn btn-warning" onclick="toggleLock()" style="display: none;">🔒 Locked</button>
+        <button id="addProductBtn" class="btn btn-primary" onclick="openModal()" style="display: none;">+ Add Product</button>
+        <button id="addEmpBtn" class="btn btn-success" onclick="openEmpModal()" style="display: none;">+ Add Employee</button>
+        
+        <!-- EVERYONE BUTTONS -->
+        <button class="btn btn-outline" onclick="resetDemo()">Reset Demo</button>
+        <!-- ⭐ THE NEW UPGRADE: Export CSV Button -->
+        <button class="btn btn-outline" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
+    <!-- OWNER ONLY DASHBOARD LINK -->
+    <div id="dashboardLinkContainer" class="toolbar" style="margin-top: 15px; justify-content: center; display: none;">
+        <a href="dashboard.html" class="btn btn-primary" style="text-decoration: none; text-align: center; width: 100%;">📊 Go to Owner Intelligence Dashboard</a>
+    </div>
+
+    <!-- PRODUCT LIST -->
+    <div id="productList" class="product-list"></div>
+
+    <!-- ADD PRODUCT MODAL -->
+    <div id="addProductModal" class="modal-overlay">
+        <div class="modal">
+            <h2>Add New Product</h2>
+            <div class="form-group">
+                <label for="prodName">Product Name</label>
+                <input type="text" id="prodName" placeholder="e.g. Maize Meal">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="prodCost">Cost Price ($)</label>
+                    <input type="number" id="prodCost" placeholder="2.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="prodSell">Selling Price ($)</label>
+                    <input type="number" id="prodSell" placeholder="3.00" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="prodStock">Initial Stock</label>
+                <input type="number" id="prodStock" placeholder="20" value="10">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="handleAddProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD EMPLOYEE MODAL -->
+    <div id="addEmpModal" class="modal-overlay">
+        <div class="modal">
+            <h2>Add New Employee</h2>
+            <div class="form-group">
+                <label for="empName">Employee Name</label>
+                <input type="text" id="empName" placeholder="e.g. Tafadzwa">
+            </div>
+            <div class="form-group">
+                <label for="empPin">Employee PIN (4 digits)</label>
+                <input type="password" id="empPin" placeholder="Enter PIN">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeEmpModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="handleAddEmployee()">Save Employee</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
