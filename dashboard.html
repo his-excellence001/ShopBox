@@ -3,80 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard - ShopKeeper</title>
-    <link rel="stylesheet" href="dashboard.css">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <title>ShopBox - Owner Dashboard</title>
+
+    <!-- PWA & Mobile Polish Meta Tags -->
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="manifest.json" />
+
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js for analytics rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <header>
-            <h1>📊 Owner Dashboard</h1>
-            <a href="index.html" class="btn btn-outline" style="text-decoration: none; font-size: 0.9rem;">← Back to Shop</a>
-        </header>
+<body class="dashboard-body">
 
-        <!-- Business Health -->
-        <div class="health-card">
-            <div class="health-header">
-                <span>Business Health Score</span>
-                <span class="score">87% <span class="tag tag-good">Good</span></span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: 87%;"></div>
-            </div>
-            <div class="health-details">
-                <span>📈 Cash flow: Stable</span>
-                <span>⚠️ Stock risk: Low</span>
-                <span>✅ Profit trend: Rising</span>
-            </div>
-        </div>
-
-        <!-- Cash Flow Forecast -->
-        <h2 class="section-title">💰 Cash Flow Forecast</h2>
-        <div class="grid-3">
-            <div class="summary-card"><span class="label">Current</span><div class="value">$1,240</div></div>
-            <div class="summary-card"><span class="label">In 7 Days</span><div class="value green">$1,780</div></div>
-            <div class="summary-card"><span class="label">In 30 Days</span><div class="value green">$4,920</div></div>
-        </div>
-
-        <!-- AI Advice Panel -->
-        <h2 class="section-title">🧠 AI Advice (Today)</h2>
-        <div class="advice-list">
-            <div class="advice-item">
-                <div class="advice-icon impact-high">🚀</div>
-                <div><strong>Increase Rice stock</strong> <span class="tag impact-high">High Impact</span><br><small>Sales increased 28% this week. Restock 50 units.</small></div>
-            </div>
-            <div class="advice-item">
-                <div class="advice-icon impact-medium">💰</div>
-                <div><strong>Reduce Sugar order</strong> <span class="tag impact-medium">Save Cash</span><br><small>Current stock can last 19 days. Delay order.</small></div>
-            </div>
-            <div class="advice-item">
-                <div class="advice-icon impact-high">📦</div>
-                <div><strong>Move Drinks near entrance</strong> <span class="tag impact-high">+12% Sales</span><br><small>Evening customers buy them most. Relocate.</small></div>
-            </div>
-        </div>
-
-        <!-- Budget Recommendation -->
-        <h2 class="section-title">📋 Recommended Weekly Budget</h2>
-        <div class="budget-card">
-            <div class="budget-item"><span>Stock purchase</span><span>$420</span></div>
-            <div class="budget-item"><span>Rent</span><span>$80</span></div>
-            <div class="budget-item"><span>Transport</span><span>$35</span></div>
-            <div class="budget-item"><span>Utilities</span><span>$25</span></div>
-            <div class="budget-item"><span>Emergency reserve</span><span>$40</span></div>
-            <div class="budget-item total"><span>Total</span><span>$660</span></div>
-            <div class="safe-limit">✅ Safe spending limit: <strong>$700</strong> (You are safe)</div>
-        </div>
-
-        <!-- Daily Action Feed -->
-        <h2 class="section-title">📅 Morning Action Feed</h2>
-        <div class="feed-list">
-            <div class="feed-item">📦 <strong>Restock Rice</strong> <span class="tag urgent">Do today</span> <br><small>Expected profit: +$32</small></div>
-            <div class="feed-item">💰 <strong>Do not withdraw > $60</strong> <span class="tag urgent">Important</span><br><small>Cash flow is tight this week.</small></div>
-            <div class="feed-item">📊 <strong>Promote Drinks after 5 PM</strong> <br><small>Customers buy more in the evening.</small></div>
+    <!-- PIN SECURITY LOCK OVERLAY -->
+    <div id="pinModal" class="modal-overlay" style="display: flex;">
+        <div class="modal-card">
+            <h2>🔒 Security Check</h2>
+            <p>Enter Owner PIN to access management metrics.</p>
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" style="font-size: 24px; text-align: center; letter-spacing: 8px;">
+            <button id="pinSubmitBtn" class="btn-primary" style="margin-top: 15px; width: 100%;">Unlock Dashboard</button>
+            <p id="pinError" class="error-text" style="display: none; color: #ff4d4d; margin-top: 10px;">Incorrect PIN. Try again.</p>
         </div>
     </div>
 
+    <!-- MAIN DASHBOARD CONTENT (Hidden until PIN verified) -->
+    <div id="dashboardContent" style="display: none;">
+        
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>ShopBox <span>Intelligence</span></h1>
+            </div>
+            <div class="nav-actions">
+                <a href="index.html" class="btn-secondary">📦 Terminal View</a>
+                <button id="lockBtn" class="btn-danger">🔒 Lock Dashboard</button>
+            </div>
+        </nav>
+
+        <main class="dashboard-container">
+            
+            <!-- TOP METRICS CARDS -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <h3>Today's Gross Sales</h3>
+                    <p id="metricSales" class="metric-value">$0.00</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Net Profit Today</h3>
+                    <p id="metricProfit" class="metric-value">$0.00</p>
+                </div>
+                <div class="metric-card">
+                    <h3>Inventory Valuation</h3>
+                    <p id="metricStockValue" class="metric-value">$0.00</p>
+                </div>
+                <div class="metric-card warning">
+                    <h3>Low Stock Alerts</h3>
+                    <p id="metricLowStock" class="metric-value">0 Items</p>
+                </div>
+            </section>
+
+            <!-- SCENARIO SIMULATOR SECTION -->
+            <section class="dashboard-section card">
+                <h2>🔮 Restock Scenario Simulator</h2>
+                <p>Simulate cash-flow outcomes before committing to a wholesale order.</p>
+                
+                <form id="simulatorForm" class="simulator-controls" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                    <select id="simProduct" required style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #0f172a; color: #e2e8f0;">
+                        <option value="">-- Choose product --</option>
+                    </select>
+
+                    <input type="number" id="simQty" placeholder="Order Qty" min="1" required style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #0f172a; color: #e2e8f0;">
+                    
+                    <input type="number" id="simCost" step="0.01" placeholder="Cost per Unit ($)" required style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #0f172a; color: #e2e8f0;">
+                    
+                    <button type="submit" class="btn-primary" style="flex: 1;">Simulate Impact</button>
+                </form>
+
+                <div id="simResult" class="simulation-output" style="margin-top: 15px; display: none;">
+                    <!-- Dynamic results render here via dashboard.js -->
+                </div>
+            </section>
+
+            <!-- ANALYTICS & CHARTS -->
+            <section class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div class="card">
+                    <h3>Revenue vs. Profit Trend</h3>
+                    <canvas id="salesChart"></canvas>
+                </div>
+                <div class="card">
+                    <h3>Top Selling Inventory</h3>
+                    <canvas id="productsChart"></canvas>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- DASHBOARD LOGIC SCRIPT -->
     <script src="dashboard.js"></script>
 </body>
 </html>

@@ -1,344 +1,204 @@
 // ==========================================
-// 0. SUB0 / LINGOQL BACKEND INTEGRATION (Swappable Data Layer)
+// SHOPBOX CORE APPLICATION SCRIPT
 // ==========================================
 
-// --- PLACEHOLDER FOR SUB0/LINGOQL BACKEND INTEGRATION ---
-// For the hackathon demo, we use localStorage. In production, uncomment these:
+// --- STORAGE HELPER FUNCTIONS ---
 
-/*
-async function getProducts() {
-    const res = await fetch('https://your-sub0-api.com/products', {
-        headers: { 'Authorization': 'Bearer ' + sessionStorage.getItem('userToken') }
-    });
-    return res.json();
-}
-
-async function saveProducts(products) {
-    await fetch('https://your-sub0-api.com/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(products)
-    });
-}
-*/
-
-
-// ==========================================
-// 1. DATA STORAGE & INIT (LocalStorage fallback)
-// ==========================================
-
-// Get products from localStorage or use default seed data
 function getProducts() {
-    const defaultProducts = [
-        { id: "prod_001", name: "10kg Long Grain Rice", cost: 8.50, sell: 12.00, stock: 15 },
-        { id: "prod_002", name: "5L Cooking Oil", cost: 6.00, sell: 9.50, stock: 4 },
-        { id: "prod_003", name: "1kg Iodized Salt", cost: 0.80, sell: 1.50, stock: 25 }
-    ];
-    const stored = localStorage.getItem("shopbox_products");
-    if (!stored) {
-        localStorage.setItem("shopbox_products", JSON.stringify(defaultProducts));
-        return defaultProducts;
-    }
-    return JSON.parse(stored);
+    return JSON.parse(localStorage.getItem('products')) || [];
 }
 
 function saveProducts(products) {
-    localStorage.setItem("shopbox_products", JSON.stringify(products));
+    localStorage.setItem('products', JSON.stringify(products));
 }
 
-// Get logged-in user details
-function getCurrentUser() {
-    const defaultUser = { username: "Owner", role: "owner" }; // Fallback default
-    const session = localStorage.getItem("shopbox_session");
-    return session ? JSON.parse(session) : defaultUser;
+function getTransactions() {
+    return JSON.parse(localStorage.getItem('transactions')) || [];
 }
 
-// Get system lock status
-function getLockStatus() {
-    const locked = localStorage.getItem("shopbox_locked");
-    return locked === "true"; // Defaults to false if null
+function saveTransactions(transactions) {
+    localStorage.setItem('transactions', JSON.stringify(transactions));
 }
 
-function setLockStatus(isLocked) {
-    localStorage.setItem("shopbox_locked", isLocked ? "true" : "false");
+function getTodayStr() {
+    return new Date().toISOString().split('T')[0];
 }
 
+// --- CORE PRODUCT MANAGEMENT ---
 
-// ==========================================
-// 2. CORE OPERATIONS (Add, Restock, Sell, Delete, Export)
-// ==========================================
+function addProduct(name, costPrice, sellingPrice, stockQuantity) {
+    const products = getProducts();
+    const newProduct = {
+        id: Date.now().toString(),
+        name: name,
+        costPrice: parseFloat(costPrice) || 0,
+        price: parseFloat(sellingPrice) || 0,
+        stockQuantity: parseInt(stockQuantity, 10) || 0,
+        createdAt: new Date().toISOString()
+    };
+    products.push(newProduct);
+    saveProducts(products);
+    updateUI();
+}
 
-// Add a brand-new product (Owner Only)
-function handleAddProduct() {
-    const name = document.getElementById("prodName").value.trim();
-    const cost = parseFloat(document.getElementById("prodCost").value);
-    const sell = parseFloat(document.getElementById("prodSell").value);
-    const stock = parseInt(document.getElementById("prodStock").value);
+function recordSale(productId, quantity) {
+    const products = getProducts();
+    const product = products.find(p => String(p.id) === String(productId));
 
-    if (!name || isNaN(cost) || isNaN(sell) || isNaN(stock)) {
-        alert("Please fill in all product details with valid numbers.");
+    if (!product) {
+        alert("Product not found!");
         return;
     }
 
-    const products = getProducts();
-    const newProduct = {
-        id: "prod_" + Date.now(),
-        name: name,
-        cost: cost,
-        sell: sell,
-        stock: stock
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) {
+        alert("Please enter a valid quantity.");
+        return;
+    }
+
+    if (product.stockQuantity < qty) {
+        alert(`Insufficient stock! Only ${product.stockQuantity} remaining.`);
+        return;
+    }
+
+    // Deduct stock
+    product.stockQuantity -= qty;
+    saveProducts(products);
+
+    // Record sale transaction
+    const transactions = getTransactions();
+    const transaction = {
+        id: Date.now().toString(),
+        productId: productId,
+        productName: product.name,
+        type: 'sale',
+        quantity: qty,
+        amount: product.price * qty,
+        profit: (product.price - product.costPrice) * qty,
+        timestamp: new Date().toISOString()
     };
 
-    products.push(newProduct);
+    transactions.push(transaction);
+    saveTransactions(transactions);
+
+    updateUI();
+}
+
+// --- CORRECTED RETURN PRODUCT FUNCTION ---
+
+function returnProduct(productId) {
+    const products = getProducts();
+    const product = products.find(p => String(p.id) === String(productId));
+    
+    if (!product) {
+        alert("Product not found.");
+        return;
+    }
+
+    const transactions = getTransactions();
+    const today = getTodayStr();
+
+    // 1. Filter today's sale transactions for this product
+    const todaysSales = transactions
+        .filter(t => String(t.productId) === String(productId) && t.type === 'sale' && t.timestamp && t.timestamp.startsWith(today))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (todaysSales.length === 0) {
+        alert(`No sales recorded today for "${product.name}".`);
+        return;
+    }
+
+    const latestSale = todaysSales[0];
+
+    if (!confirm(`Void sale of ${latestSale.quantity} unit(s) of "${product.name}"?`)) {
+        return;
+    }
+
+    // 2. Restore inventory stock and save
+    product.stockQuantity = (Number(product.stockQuantity) || 0) + Number(latestSale.quantity);
     saveProducts(products);
-    closeModal();
-    renderApp();
+
+    // 3. Log a negative return transaction to fix daily totals and save
+    const returnTransaction = {
+        id: Date.now().toString(),
+        productId: productId,
+        productName: product.name,
+        type: 'return',
+        quantity: -Math.abs(latestSale.quantity),
+        amount: -(Number(latestSale.amount) || (Number(product.price) * Number(latestSale.quantity))),
+        profit: -(Number(latestSale.profit) || 0),
+        timestamp: new Date().toISOString()
+    };
+    
+    transactions.push(returnTransaction);
+    saveTransactions(transactions);
+
+    // 4. Update UI
+    updateUI();
+    alert(`Successfully voided sale for "${product.name}". Stock restored!`);
 }
 
-// Restock an existing product's inventory
-function restockProduct(productId) {
+// --- UI REFRESH AND RENDER LOGIC ---
+
+function renderProducts() {
+    const productListEl = document.getElementById('product-list');
+    if (!productListEl) return;
+
     const products = getProducts();
-    const product = products.find(p => p.id === productId);
-    
-    if (product) {
-        const amount = prompt(`How many units of "${product.name}" are you adding?`, "10");
-        const qty = parseInt(amount);
-        if (isNaN(qty) || qty <= 0) return;
+    productListEl.innerHTML = '';
 
-        product.stock += qty;
-        saveProducts(products);
-        renderApp();
-    }
-}
-
-// Register a sale
-function sellProduct(productId) {
-    const products = getProducts();
-    const product = products.find(p => p.id === productId);
-
-    if (product) {
-        if (product.stock <= 0) {
-            alert(`"${product.name}" is out of stock!`);
-            return;
-        }
-
-        product.stock -= 1;
-        saveProducts(products);
-        
-        // Track sales statistics (Mock tracking for summary metrics)
-        updateSalesMetrics(product.sell, product.sell - product.cost);
-        renderApp();
-    }
-}
-
-// Delete a product permanently (Owner Only)
-function deleteProduct(productId) {
-    const user = getCurrentUser();
-    
-    // Safety check: Only Owners have access to run this
-    if (user.role !== 'owner') { 
-        alert("Only the Owner can delete products."); 
-        return; 
-    }
-    
-    // Safety check: Avoid accidental clicks
-    if (!confirm("Are you sure you want to permanently delete this product?")) return;
-    
-    let products = getProducts();
-    products = products.filter(p => p.id !== productId);
-    saveProducts(products);
-    renderApp();
-}
-
-// ⭐ THE NEW UPGRADE: Export local products array as a clean CSV file
-function exportCSV() {
-    const products = getProducts();
-    if (products.length === 0) { 
-        alert("No products to export."); 
-        return; 
+    if (products.length === 0) {
+        productListEl.innerHTML = '<p class="empty-msg">No products added yet.</p>';
+        return;
     }
 
-    // Set up table header rows
-    let csv = "Product Name,Cost Price ($),Selling Price ($),Stock Level (Units)\n";
-    
-    // Loop through inventory list and clean up commas to avoid column break errors
-    products.forEach(p => {
-        const escapedName = p.name.replace(/,/g, ""); 
-        csv += `${escapedName},${p.cost.toFixed(2)},${p.sell.toFixed(2)},${p.stock}\n`;
-    });
-
-    // Generate blob file and trigger direct system download
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'ShopBox_Inventory_Report.csv';
-    a.click();
-}
-
-
-// ==========================================
-// 3. LOCK & PERMISSIONS LOGIC
-// ==========================================
-
-function toggleLock() {
-    const currentlyLocked = getLockStatus();
-    
-    if (currentlyLocked) {
-        // Unlock attempt: Require verification
-        const pin = prompt("Enter your Owner PIN to unlock modifications:");
-        if (pin === "1234" || pin === "0000") { // Placeholder pins
-            setLockStatus(false);
-        } else {
-            alert("Incorrect PIN! Action rejected.");
-            return;
-        }
-    } else {
-        // Lock instantly
-        setLockStatus(true);
-    }
-    renderApp();
-}
-
-function handleLogout() {
-    localStorage.removeItem("shopbox_session");
-    window.location.href = "login.html";
-}
-
-
-// ==========================================
-// 4. RENDER PIPELINE (Building the UI dynamically)
-// ==========================================
-
-function renderApp() {
-    const user = getCurrentUser();
-    const products = getProducts();
-    const isLocked = getLockStatus();
-    const query = document.getElementById("searchInput").value.toLowerCase();
-
-    // Set User Identity Header label
-    document.getElementById("userLabel").innerText = `${user.username} (${user.role.toUpperCase()})`;
-
-    // Filter Products based on search bar
-    const filteredProducts = products.filter(p => p.name.toLowerCase().includes(query));
-
-    // Render Product Cards Grid
-    const listContainer = document.getElementById("productList");
-    listContainer.innerHTML = "";
-
-    filteredProducts.forEach(p => {
-        const isLowStock = p.stock <= 5;
-        const card = document.createElement("div");
-        card.className = `product-card ${isLowStock ? "low-stock" : ""}`;
-
-        card.innerHTML = `
-            <div class="product-info">
-                <h3>${p.name}</h3>
-                <p class="price">Selling: <strong>$${p.sell.toFixed(2)}</strong> <span style="font-size: 0.8rem; color: #7f8c8d;">(Cost: $${p.cost.toFixed(2)})</span></p>
-                <p class="stock-level ${isLowStock ? "text-orange" : ""}">
-                    Stock remaining: <strong>${p.stock} units</strong>
-                </p>
-            </div>
-            <div class="product-actions">
-                <button class="action-btn btn-restock" onclick="restockProduct('${p.id}')">Restock</button>
-                <button class="action-btn btn-sell" onclick="sellProduct('${p.id}')">Sell</button>
-                
-                <!-- The dynamically injected Delete button. Handled via JS roles -->
-                <button class="action-btn btn-delete" id="deleteBtn-${p.id}" onclick="deleteProduct('${p.id}')" title="Delete Product">✕</button>
+    products.forEach(product => {
+        const item = document.createElement('div');
+        item.className = 'product-card';
+        item.innerHTML = `
+            <h3>${product.name}</h3>
+            <p><strong>Stock:</strong> ${product.stockQuantity}</p>
+            <p><strong>Price:</strong> $${Number(product.price).toFixed(2)}</p>
+            <div class="card-actions">
+                <button onclick="recordSale('${product.id}', 1)">Sell 1</button>
+                <button onclick="returnProduct('${product.id}')" class="btn-return">Return Sale</button>
             </div>
         `;
-        listContainer.appendChild(card);
+        productListEl.appendChild(item);
     });
-
-    // Handle Role-Based UI Element Displays
-    const isOwner = user.role === "owner";
-
-    // Show/Hide buttons depending on Owner role & Lock status
-    document.getElementById("addProductBtn").style.display = (isOwner && !isLocked) ? "block" : "none";
-    document.getElementById("addEmpBtn").style.display = (isOwner && !isLocked) ? "block" : "none";
-    document.getElementById("lockBtn").style.display = isOwner ? "block" : "none";
-    document.getElementById("dashboardLinkContainer").style.display = isOwner ? "flex" : "none";
-
-    // Update Owner's Lock Button text & colors dynamically
-    const lockBtn = document.getElementById("lockBtn");
-    if (isLocked) {
-        lockBtn.innerText = "🔒 Locked";
-        lockBtn.className = "btn btn-warning";
-    } else {
-        lockBtn.innerText = "🔓 Unlocked";
-        lockBtn.className = "btn btn-success";
-    }
-
-    // Toggle delete button visibilities based on Owner role and current Lock status
-    products.forEach(p => {
-        const deleteBtn = document.getElementById(`deleteBtn-${p.id}`);
-        if (deleteBtn) {
-            deleteBtn.style.display = (isOwner && !isLocked) ? "inline-block" : "none";
-        }
-    });
-
-    // Update Dashboard Metrics Counters
-    calculateSummaryMetrics(products);
 }
 
+function renderDashboard() {
+    const dashboardEl = document.getElementById('dashboard-stats');
+    if (!dashboardEl) return;
 
-// ==========================================
-// 5. HELPER METRICS ENGINE (Mocking Data)
-// ==========================================
+    const transactions = getTransactions();
+    const today = getTodayStr();
 
-function updateSalesMetrics(saleVal, profitVal) {
-    let todaySalesCount = parseInt(localStorage.getItem("sales_count") || "0");
-    let todayProfit = parseFloat(localStorage.getItem("profit_today") || "0");
+    const todaysTransactions = transactions.filter(t => t.timestamp && t.timestamp.startsWith(today));
 
-    todaySalesCount += 1;
-    todayProfit += profitVal;
+    const totalSales = todaysTransactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+    const totalProfit = todaysTransactions.reduce((sum, t) => sum + (Number(t.profit) || 0), 0);
 
-    localStorage.setItem("sales_count", todaySalesCount);
-    localStorage.setItem("profit_today", todayProfit);
+    dashboardEl.innerHTML = `
+        <div class="stat-box">
+            <h4>Today's Sales</h4>
+            <p>$${totalSales.toFixed(2)}</p>
+        </div>
+        <div class="stat-box">
+            <h4>Today's Profit</h4>
+            <p>$${totalProfit.toFixed(2)}</p>
+        </div>
+    `;
 }
 
-function calculateSummaryMetrics(products) {
-    const todaySalesCount = localStorage.getItem("sales_count") || "0";
-    const todayProfit = parseFloat(localStorage.getItem("profit_today") || "0");
-    const lowStockCount = products.filter(p => p.stock <= 5).length;
-
-    document.getElementById("salesCount").innerText = todaySalesCount;
-    document.getElementById("profitToday").innerText = `$${todayProfit.toFixed(2)}`;
-    
-    const lowStockLabel = document.getElementById("lowStockCount");
-    lowStockLabel.innerText = lowStockCount;
-    if (lowStockCount > 0) {
-        lowStockLabel.className = "value orange";
-    } else {
-        lowStockLabel.className = "value";
-    }
+function updateUI() {
+    renderProducts();
+    renderDashboard();
 }
 
-function resetDemo() {
-    if (confirm("Reset local database to default settings?")) {
-        localStorage.removeItem("shopbox_products");
-        localStorage.removeItem("sales_count");
-        localStorage.removeItem("profit_today");
-        localStorage.removeItem("shopbox_locked");
-        setLockStatus(false);
-        renderApp();
-    }
-}
+// --- INITIALIZATION ---
 
-
-// ==========================================
-// 6. INITIAL EVENT LISTENERS
-// ==========================================
-
-window.onload = function() {
-    renderApp();
-    
-    // Live Search Filter Listener
-    document.getElementById("searchInput").addEventListener("input", renderApp);
-};
-
-// Modal toggling functions
-function openModal() { document.getElementById("addProductModal").classList.add("active"); }
-function closeModal() { document.getElementById("addProductModal").classList.remove("active"); }
-function openEmpModal() { document.getElementById("addEmpModal").classList.add("active"); }
-function closeEmpModal() { document.getElementById("addEmpModal").classList.remove("active"); }
+document.addEventListener('DOMContentLoaded', () => {
+    updateUI();
+});

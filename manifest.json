@@ -1,0 +1,22 @@
+{
+  "name": "ShopBox Retail Intelligence",
+  "short_name": "ShopBox",
+  "description": "Offline-first retail management terminal and business intelligence dashboard.",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
