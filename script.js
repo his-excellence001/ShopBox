@@ -210,5 +210,13 @@ function resetDemo() {
 }
 
 // --- INIT ---
-if (getProducts().length === 0) resetDemo(); else renderApp();
+// Removed the automatic popup. User can load samples via "Reset Demo" button.
+renderApp();
+
+document.getElementById('addProductModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+document.getElementById('addEmpModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeEmpModal();
+});
 document.getElementById('searchInput')?.addEventListener('input', renderProductList);
